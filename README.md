@@ -287,6 +287,36 @@ data List a = Empty | Cons { listHead :: a, listTail :: List a} deriving (Show, 
 
 el Cons de nuevo es lo mismo que :, y en listas significa que es un constructor que toma un valor y una lista y devuelve otra lista. Entonces podemos ir concatenando valores a una lista de manera recursiva, la declaracion nos da ya el comportamiento para hacer un append, gratis!
 
+Ahora veamos un ejemplo un poco más complejo pero con árboles, en estructura de datos vimos lo que era un arbol binario, es un arbol que por cada nodo que lo compone puede derivar en otros dos nodos a lo sumo, y cuando se inserta un valor al árbol, se compara el nodo raiz o superior, y si este valor es menor iremos por el nodo izquierdo y si es mayor al valor del nodo raiz por el derecho y así hasta llegar a un árbol vacío, y de ahi agregaremos un nodo en vez de un nodo vacío. Entonces esta es una estrutcura recursiva, por lo que si en un momento queremos una porción de un árbol binario, el que devolveremos es otro con dichos valores que queremos obetener, así para cuando agregamos un nodo al árbol no estaremos agregando un elemento al árbol existente sino que estaremos creando un nuevo árbol con un nodo más, esto es por lo que contamos al comienzo de la clase sobre inmutabilidad y transparencia referencial, no hay efecto de lado en
+
+```
+data Tree a = EmptyTree | Node a (Tree a) (Tree a) deriving (Show, Read, Eq)
+```
+
+Entonces de nuevo cuando querramos agregar un valor a un arbol, estaremos generando uno nuevo, entonces tiene sentido que el contrato de un insertarNodo para un arbol binario, sea algo como lo siguiente:
+
+a -> Tree a -> Tree a
+
+```
+treeElem :: (Ord a) => a -> Tree a -> Bool
+treeElem x EmptyTree = False
+treeElem x (Node a left right)
+    | x == a = True  
+    | x < a  = treeElem x left  
+    | x > a  = treeElem x right  
+
+singletonTree :: a -> Tree a
+singletonTree x = Node x EmptyTree EmptyTree
+
+treeInsert :: (Ord a) => a -> Tree a -> Tree a
+treeInsert x EmptyTree = singletonTree x
+treeInsert x (Node a left right)
+    | x == a = Node x left right  
+    | x < a  = Node a (treeInsert x left) right  
+    | x > a  = Node a left (treeInsert x right)
+```
+
+singletonTree  es algo que nos permite generar a partir de un valor del tipo a, un árbol con un nodo raiz y dos nodos izquierdo y derecho vacíos, esto es solo para el nuevo nodo. veamos que la función como otras ejecuta solamente por medio del valor de árbol que estamos evaluando, si es vació, es decir que llegamos al final del árbol y no hay más nodods y solo hay que generar el nuevo árbol, y sino hacer la comprobación de si estamos en un valor máyo o menor al valor que estamos insertando, si el valor es el mismo, solo "reemplazamos" el valor y generamos el nuevo árbol final. Tenemos otra función que es treeElem, que es para saber si existe un valor de tipo a, con un constraint que su tipo derive del typeclass Ord, en el árbol que también pasamos por parámetro, solo es para tener una función más, por ahora no es importante, solo veamos que la codificación es muy similar.
 
 ## Definiendo nuestras typeclases
 
@@ -549,6 +579,14 @@ instance Functor Maybe where
 ```
 
 entonces veamos que lo que hicimos, es que cuando abrimos la caja, si es un Just x, tomamos el valor x, aplicamos el functor f sobre este valor y lo volvemos a meter en la caja dentro de un Just. Si en la caja no habia nada, tan solo la cerramos y seguimos que asi este. 
+
+con el árbol sucede lo mismo
+
+```
+instance Functor Tree where  
+    fmap f EmptyTree = EmptyTree  
+    fmap f (Node x leftsub rightsub) = Node (f x) (fmap f leftsub) (fmap f rightsub)
+```
 
 
 Volvamos un poco a lo que hablabamos de la teoría de categorías, los functores son un poco más que una funcion que puede aplicarse a un tipo que pueda comportarse como una caja, como es esto?
